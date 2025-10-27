@@ -1,35 +1,28 @@
 # Stage 1: Build the Spring Boot application
 FROM eclipse-temurin:17-jdk-focal AS builder
-
 WORKDIR /app
 
-# Copy Gradle wrapper and gradle folder
+# Copy Gradle wrapper and project files
 COPY gradlew .
 COPY gradle gradle
-
-# Copy build files
-COPY build.gradle settings.gradle .
-
-# Copy source code
+COPY build.gradle settings.gradle ./
 COPY src src
 
-# Make Gradle wrapper executable
+# Make wrapper executable
 RUN chmod +x gradlew
 
-# Build the executable JAR
+# Build the app (skip tests to speed up)
 RUN ./gradlew bootJar -x test
 
-# Stage 2: Runtime image
+# Stage 2: Create runtime image
 FROM eclipse-temurin:17-jre-focal
-
 WORKDIR /app
 
-# Copy JAR from builder stage
-# Make sure JAR name matches your project (Youtube_Tools-0.0.1-SNAPSHOT.jar)
-COPY --from=builder /app/build/libs/Youtube_Tools-0.0.1-SNAPSHOT.jar app.jar
+# Copy built JAR from builder stage
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose port (check application.properties)
+# Expose port
 EXPOSE 8080
 
-# Run the Spring Boot application
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
